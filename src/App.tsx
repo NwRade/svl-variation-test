@@ -18,7 +18,9 @@ function App() {
   const apiUrl = "http://localhost:3000/product/1312/variations";
   const [coverTypes, setCoverTypes] = useState<string[]>([]);
   const [colors, setColors] = useState<string[]>([]);
+  const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [boxes, setBoxes] = useState<string[]>([]);
+  const [availableBoxes, setAvailableBoxes] = useState<string[]>([]);
   const [parsedVariations, setParsedVariations] = useState<IVariation[]>([]);
   const [chosenAttributes, setChosenAttributes] = useState<(string | null)[]>([
     null,
@@ -60,7 +62,27 @@ function App() {
         })
         .filter((value, index, self) => self.indexOf(value) === index);
 
+      const uniqueColors = variations
+        .map((variation) => {
+          return (
+            variation.attributes.find((attribute) => attribute.type === "color")
+              ?.value || ""
+          );
+        })
+        .filter((value, index, self) => self.indexOf(value) === index);
+
+      const uniqueBoxes = variations
+        .map((variation) => {
+          return (
+            variation.attributes.find((attribute) => attribute.type === "box")
+              ?.value || ""
+          );
+        })
+        .filter((value, index, self) => self.indexOf(value) === index);
+
       setCoverTypes(uniqueCoverTypes);
+      setColors(uniqueColors);
+      setBoxes(uniqueBoxes);
       setParsedVariations(variations);
     } catch (error) {
       console.error(error);
@@ -88,8 +110,8 @@ function App() {
         })
         .filter((value, index, self) => self.indexOf(value) === index);
 
-      setColors(uniqueColors);
-      setBoxes([]);
+      setAvailableColors(uniqueColors);
+      setAvailableBoxes([]);
       setChosenAttributes([attribute, null, null]);
     } else if (attributeType === "color") {
       const variationsWithChosenCoverTypeAndColor = parsedVariations.filter(
@@ -113,7 +135,7 @@ function App() {
         })
         .filter((value, index, self) => self.indexOf(value) === index);
 
-      setBoxes(uniqueBoxes);
+      setAvailableBoxes(uniqueBoxes);
       setChosenAttributes([chosenAttributes[0], attribute, null]);
     } else {
       setChosenAttributes([
@@ -141,8 +163,8 @@ function App() {
 
   const clearChosenAttributes = () => {
     setChosenAttributes([null, null, null]);
-    setColors([]);
-    setBoxes([]);
+    setAvailableColors([]);
+    setAvailableBoxes([]);
   };
 
   useEffect(() => {
@@ -162,7 +184,7 @@ function App() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: "20px",
+        gap: "25px",
       }}
     >
       <div
@@ -188,7 +210,11 @@ function App() {
           }}
         >
           {colors.map((color, i) => (
-            <button key={i} onClick={() => handleClick(color, "color")}>
+            <button
+              key={i}
+              onClick={() => handleClick(color, "color")}
+              disabled={!availableColors.includes(color)}
+            >
               {color}
             </button>
           ))}
@@ -204,17 +230,40 @@ function App() {
           }}
         >
           {boxes.map((box, i) => (
-            <button key={i} onClick={() => handleClick(box, "box")}>
+            <button
+              key={i}
+              onClick={() => handleClick(box, "box")}
+              disabled={!availableBoxes.includes(box)}
+            >
               {box}
             </button>
           ))}
         </div>
       )}
 
-      {chosenVariation && <h3>Chosen Variation Id: {chosenVariation.id}</h3>}
+      {chosenVariation && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "10px",
+            alignItems: "center",
+          }}
+        >
+          <p>Chosen Variation Id: </p>
+          <h1>{chosenVariation.id}</h1>
+        </div>
+      )}
 
       {chosenAttributes[0] && (
-        <button onClick={clearChosenAttributes}>Clear Chosen Attributes</button>
+        <>
+          <br />
+          <br />
+          <br />
+          <button className="stop" onClick={clearChosenAttributes}>
+            Clear Chosen Attributes
+          </button>
+        </>
       )}
     </div>
   );
