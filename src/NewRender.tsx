@@ -74,7 +74,7 @@ const NewRender = () => {
       const apiUrl = `http://localhost:3000/product/${productId}/variations`;
       const response = await axios.get(apiUrl);
       const _variations = parseVariations(response.data.data);
-      const _attributeChoices = getAttributeChoices(variations);
+      const _attributeChoices = getAttributeChoices(_variations);
 
       if (_variations.length === 0) {
         setNoVariations(true);
@@ -93,20 +93,47 @@ const NewRender = () => {
     attributeIndex: number,
     attributeType: string
   ) => {
-    // get all variations with the chosen attribute
     const variationsWithChosenAttribute = variations.filter((variation) => {
-      return (
+      const checkForCurrentAttribute =
         variation.attributes.find(
           (attribute) => attribute.type === attributeType
-        )?.value === attribute
-      );
+        )?.value === attribute;
+
+      if (chosenAttributes.length) {
+        const newChosenAttributes = chosenAttributes.slice(0, attributeIndex);
+
+        const checkForPrevChoicesArr = newChosenAttributes.map(
+          (chosenAttribute) => {
+            const att = attributeChoices.find((attribute) =>
+              attribute.allValues.includes(chosenAttribute)
+            );
+
+            if (att) {
+              const attType = att.type;
+
+              const test2 =
+                variation.attributes.find(
+                  (attribute) => attribute.type === attType
+                )?.value === chosenAttribute;
+
+              return test2;
+            }
+
+            return false;
+          }
+        );
+
+        const checkForPrevChoices = checkForPrevChoicesArr.every((t) => t);
+
+        return checkForCurrentAttribute && checkForPrevChoices;
+      } else {
+        return checkForCurrentAttribute;
+      }
     });
 
-    // get all available values for the next attribute
     const nextAttribute = attributeChoices[attributeIndex + 1];
 
     if (!nextAttribute) {
-      // if there are no more attributes then just add the chosen attribute
       setChosenAttributes([...chosenAttributes, attribute]);
       return;
     }
@@ -121,7 +148,6 @@ const NewRender = () => {
       });
     });
 
-    // update available values for the next attribute
     const updatedAttributeChoices = attributeChoices.map((choice, index) => {
       if (index === attributeIndex + 1) {
         return {
@@ -132,7 +158,6 @@ const NewRender = () => {
       return choice;
     });
 
-    // update chosen attributes
     const updatedChosenAttributes = chosenAttributes.slice(0, attributeIndex);
     updatedChosenAttributes.push(attribute);
 
@@ -141,7 +166,6 @@ const NewRender = () => {
   };
 
   const getVariationIdOfChosenAttributes = () => {
-    // return the variation id of the chosen attributes
     const variation = variations.find((variation) => {
       return variation.attributes.every((attribute, index) => {
         return attribute.value === chosenAttributes[index];
