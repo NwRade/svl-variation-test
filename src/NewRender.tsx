@@ -81,8 +81,11 @@ const NewRender = () => {
         return;
       }
 
+      setNoVariations(false);
       setVariations(_variations);
       setAttributeChoices(_attributeChoices);
+      setChosenAttributes([]);
+      setChosenVariation(undefined);
     } catch (error) {
       console.error(error);
     }
@@ -93,15 +96,15 @@ const NewRender = () => {
     attributeIndex: number,
     attributeType: string
   ) => {
+    const newChosenAttributes = chosenAttributes.slice(0, attributeIndex);
+
     const variationsWithChosenAttribute = variations.filter((variation) => {
       const checkForCurrentAttribute =
         variation.attributes.find(
           (attribute) => attribute.type === attributeType
         )?.value === attribute;
 
-      if (chosenAttributes.length) {
-        const newChosenAttributes = chosenAttributes.slice(0, attributeIndex);
-
+      if (newChosenAttributes.length) {
         const checkForPrevChoicesArr = newChosenAttributes.map(
           (chosenAttribute) => {
             const att = attributeChoices.find((attribute) =>
@@ -134,7 +137,7 @@ const NewRender = () => {
     const nextAttribute = attributeChoices[attributeIndex + 1];
 
     if (!nextAttribute) {
-      setChosenAttributes([...chosenAttributes, attribute]);
+      setChosenAttributes([...newChosenAttributes, attribute]);
       return;
     }
 
@@ -158,7 +161,10 @@ const NewRender = () => {
       return choice;
     });
 
-    const updatedChosenAttributes = chosenAttributes.slice(0, attributeIndex);
+    const updatedChosenAttributes = newChosenAttributes.slice(
+      0,
+      attributeIndex
+    );
     updatedChosenAttributes.push(attribute);
 
     setAttributeChoices(updatedAttributeChoices);
@@ -176,7 +182,9 @@ const NewRender = () => {
   };
 
   useEffect(() => {
-    getVariationIdOfChosenAttributes();
+    if (chosenAttributes.length === attributeChoices.length) {
+      getVariationIdOfChosenAttributes();
+    }
   }, [chosenAttributes]);
 
   return (
@@ -245,6 +253,11 @@ const NewRender = () => {
                       attributeIndex !== 0 &&
                       !attribute.availableValues.includes(attributeValue)
                     }
+                    className={`${
+                      chosenAttributes.includes(attributeValue)
+                        ? "selected"
+                        : ""
+                    }`}
                   >
                     {attributeValue}
                   </button>

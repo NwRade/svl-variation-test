@@ -35,3 +35,8 @@ button:disabled {
   height: 40px;
   width: 100px;
 }
+
+.selected {
+  background-color: blueviolet;
+  color: white;
+}
