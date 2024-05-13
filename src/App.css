@@ -27,3 +27,11 @@ button:disabled {
 .stop:hover {
   background-color: darkred;
 }
+
+.submit {
+  background-color: green;
+  color: white;
+  border: none;
+  height: 40px;
+  width: 100px;
+}

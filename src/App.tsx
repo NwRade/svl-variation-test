@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import axios from "axios";
 
@@ -15,18 +15,20 @@ interface IVariation {
 }
 
 function App() {
-  const apiUrl = "http://localhost:3000/product/1312/variations";
   const [coverTypes, setCoverTypes] = useState<string[]>([]);
   const [colors, setColors] = useState<string[]>([]);
   const [availableColors, setAvailableColors] = useState<string[]>([]);
   const [boxes, setBoxes] = useState<string[]>([]);
   const [availableBoxes, setAvailableBoxes] = useState<string[]>([]);
   const [parsedVariations, setParsedVariations] = useState<IVariation[]>([]);
+  const [noVariations, setNoVariations] = useState<boolean>(false);
   const [chosenAttributes, setChosenAttributes] = useState<(string | null)[]>([
     null,
     null,
     null,
   ]);
+
+  const productIdInputRef = useRef<HTMLInputElement>(null);
 
   const [chosenVariation, setChosenVariation] = useState<
     IVariation | undefined
@@ -47,10 +49,18 @@ function App() {
     });
   };
 
-  const fetchVariations = async () => {
+  const fetchVariations = async (productId: number) => {
     try {
+      const apiUrl = `http://localhost:3000/product/${productId}/variations`;
       const response = await axios.get(apiUrl);
       const variations = parseVariations(response.data.data);
+
+      if (variations.length === 0) {
+        setNoVariations(true);
+        return;
+      }
+
+      setNoVariations(false);
 
       const uniqueCoverTypes = variations
         .map((variation) => {
@@ -163,13 +173,15 @@ function App() {
 
   const clearChosenAttributes = () => {
     setChosenAttributes([null, null, null]);
+    setParsedVariations([]);
+    setChosenVariation(undefined);
     setAvailableColors([]);
     setAvailableBoxes([]);
+    setNoVariations(false);
+    setBoxes([]);
+    setColors([]);
+    setCoverTypes([]);
   };
-
-  useEffect(() => {
-    fetchVariations();
-  }, []);
 
   useEffect(() => {
     getVariationIdOfChosenAttributes();
@@ -190,16 +202,46 @@ function App() {
       <div
         style={{
           display: "flex",
-          flexDirection: "row",
+          flexDirection: "column",
+          alignItems: "center",
           gap: "10px",
         }}
       >
-        {coverTypes.map((coverType, i) => (
-          <button key={i} onClick={() => handleClick(coverType, "covertype")}>
-            {coverType}
-          </button>
-        ))}
+        <label htmlFor="productIdInput">Enter a product Id: </label>
+        <input
+          ref={productIdInputRef}
+          id="productIdInput"
+          name="productIdInput"
+          type="number"
+        />
+        <button
+          className="submit"
+          onClick={() => {
+            const productId = parseInt(productIdInputRef.current?.value || "");
+            fetchVariations(productId);
+          }}
+        >
+          Submit
+        </button>
       </div>
+
+      {parsedVariations && (
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "row",
+            gap: "10px",
+          }}
+        >
+          {coverTypes.map((coverType, i) => (
+            <button key={i} onClick={() => handleClick(coverType, "covertype")}>
+              {coverType}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {noVariations && <p>No variations found for this product.</p>}
 
       {chosenAttributes[0] && (
         <div
