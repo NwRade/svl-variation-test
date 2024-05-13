@@ -31,6 +31,14 @@ const NewRender = () => {
     IVariation | undefined
   >(undefined);
 
+  const resetToInitialState = () => {
+    setVariations([]);
+    setNoVariations(false);
+    setAttributeChoices([]);
+    setChosenAttributes([]);
+    setChosenVariation(undefined);
+  };
+
   const parseVariations = (variations: IVariation[]) => {
     return variations.map((variation: IVariation) => {
       return {
@@ -213,6 +221,7 @@ const NewRender = () => {
           id="productIdInput"
           name="productIdInput"
           type="number"
+          defaultValue={1312}
         />
         <button
           className="submit"
@@ -279,6 +288,17 @@ const NewRender = () => {
           <p>Chosen Variation Id: </p>
           <h1>{chosenVariation.id}</h1>
         </div>
+      )}
+
+      {chosenAttributes[0] && (
+        <>
+          <br />
+          <br />
+          <br />
+          <button className="stop" onClick={resetToInitialState}>
+            Clear Chosen Attributes
+          </button>
+        </>
       )}
     </div>
   );
