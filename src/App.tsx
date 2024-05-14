@@ -20,8 +20,14 @@ interface IAttributeChoices {
   availableValues: string[];
 }
 
+interface IAttributeChoicesResponseEntity {
+  name: string;
+  option: string;
+}
+
 function App() {
   const productIdInputRef = useRef<HTMLInputElement>(null);
+  const remoteIDInputRef = useRef<HTMLInputElement>(null);
   const [variations, setVariations] = useState<IVariation[]>([]);
   const [noVariations, setNoVariations] = useState<boolean>(false);
   const [attributeChoices, setAttributeChoices] = useState<IAttributeChoices[]>(
@@ -31,6 +37,12 @@ function App() {
   const [chosenVariation, setChosenVariation] = useState<
     IVariation | undefined
   >(undefined);
+
+  const [chosenAttributeResponse, setChosenAttributeResponse] = useState<
+    IAttributeChoicesResponseEntity[]
+  >([]);
+
+  const [producrRedirectUrl, setProductRedirectUrl] = useState<string>("");
 
   const resetToInitialState = () => {
     setVariations([]);
@@ -78,7 +90,7 @@ function App() {
     return attributeChoices;
   };
 
-  const fetchVariations = async (productId: number) => {
+  const fetchVariations = async (productId: string) => {
     try {
       const apiUrl = `http://localhost:3000/product/${productId}/variations`;
       const response = await axios.get(apiUrl);
@@ -180,6 +192,29 @@ function App() {
     setChosenAttributes(updatedChosenAttributes);
   };
 
+  const createChosenAttributeResponse = () => {
+    const attributeResponse: IAttributeChoicesResponseEntity[] =
+      chosenAttributes.map((attribute) => {
+        const att = attributeChoices.find((attributeChoice) =>
+          attributeChoice.allValues.includes(attribute)
+        );
+
+        if (att) {
+          return {
+            name: att.type,
+            option: attribute,
+          };
+        }
+
+        return {
+          name: "",
+          option: "",
+        };
+      });
+
+    setChosenAttributeResponse(attributeResponse);
+  };
+
   const getVariationIdOfChosenAttributes = () => {
     const variation = variations.find((variation) => {
       return variation.attributes.every((attribute, index) => {
@@ -190,9 +225,54 @@ function App() {
     setChosenVariation(variation);
   };
 
+  const createCustomization = async (variationId: string) => {
+    const apiUrl = `http://localhost:3000/customization/generate/${variationId}`;
+    const response = await axios.get(apiUrl, {
+      params: {
+        redirect: false,
+      },
+    });
+
+    if (response.status !== 200) {
+      return;
+    }
+
+    const customizationurl = response.data.url as string;
+    const customizationId = customizationurl.split("/").pop();
+
+    console.log(customizationId);
+
+    const updateUrl = `http://localhost:3000/customization/${customizationId}`;
+
+    const updateResp = await axios.patch(updateUrl, {
+      sessionId: customizationId,
+      customizationMetadata: {},
+      variantId: chosenVariation?.id,
+      attributeData: chosenAttributeResponse,
+    });
+
+    if (updateResp.status !== 200) {
+      return;
+    }
+
+    const completeUrl = `http://localhost:3000/customization/${customizationId}/complete`;
+
+    const completeResp = await axios.post(completeUrl, {
+      sessionId: customizationId,
+    });
+
+    if (completeResp.status !== 201) {
+      return;
+    }
+
+    const addUrl = completeResp.data.data;
+    setProductRedirectUrl(addUrl);
+  };
+
   useEffect(() => {
     if (chosenAttributes.length === attributeChoices.length) {
       getVariationIdOfChosenAttributes();
+      createChosenAttributeResponse();
     }
   }, [chosenAttributes]);
 
@@ -216,18 +296,27 @@ function App() {
           gap: "10px",
         }}
       >
+        <label htmlFor="remoteIdInput">Enter a remote Id: </label>
+        <input
+          ref={remoteIDInputRef}
+          id="remoteIdInput"
+          name="remoteIdInput"
+          type="string"
+          defaultValue={"1312"}
+        />
+        <br />
         <label htmlFor="productIdInput">Enter a product Id: </label>
         <input
           ref={productIdInputRef}
           id="productIdInput"
           name="productIdInput"
-          type="number"
-          defaultValue={1312}
+          type="string"
+          defaultValue={"7fa95dd9-26b8-4aac-8c8f-17920c9d953d"}
         />
         <button
           className="submit"
           onClick={() => {
-            const productId = parseInt(productIdInputRef.current?.value || "");
+            const productId = productIdInputRef.current?.value || "";
             fetchVariations(productId);
           }}
         >
@@ -288,6 +377,26 @@ function App() {
         >
           <p>Chosen Variation Id: </p>
           <h1>{chosenVariation.id}</h1>
+          <br />
+          <button
+            className="submit"
+            onClick={() => {
+              const remoteId = remoteIDInputRef.current?.value || "";
+              createCustomization(remoteId);
+            }}
+          >
+            Generate Customization
+          </button>
+          {producrRedirectUrl && (
+            <button
+              className="submit"
+              onClick={() => {
+                window.open(producrRedirectUrl, "_blank");
+              }}
+            >
+              Add Product to Cart
+            </button>
+          )}
         </div>
       )}
 
