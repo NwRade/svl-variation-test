@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import "./App.css";
 
@@ -28,9 +28,11 @@ interface IAttributeChoicesResponseEntity {
   option: string;
 }
 
+const BASE_API_URL = "http://91.108.111.210:3000";
+
 function App() {
-  const productIdInputRef = useRef<HTMLInputElement>(null);
-  const remoteIDInputRef = useRef<HTMLInputElement>(null);
+  const [productId, setProductId] = useState<string>("");
+  const [remoteId, setRemoteId] = useState<string>("");
   const [variations, setVariations] = useState<IVariation[]>([]);
   const [noVariations, setNoVariations] = useState<boolean>(false);
   const [attributeChoices, setAttributeChoices] = useState<IAttributeChoices[]>(
@@ -46,14 +48,6 @@ function App() {
   >([]);
 
   const [producrRedirectUrl, setProductRedirectUrl] = useState<string>("");
-
-  const resetToInitialState = () => {
-    setVariations([]);
-    setNoVariations(false);
-    setAttributeChoices([]);
-    setChosenAttributes([]);
-    setChosenVariation(undefined);
-  };
 
   const parseVariations = (variations: IVariation[]) => {
     return variations.map((variation: IVariation) => {
@@ -95,9 +89,21 @@ function App() {
     return attributeChoices;
   };
 
-  const fetchVariations = async (productId: string) => {
+  const fetchProductId = async () => {
+    const apiUrl = `${BASE_API_URL}/product/remote/${remoteId}`;
+    const response = await axios.get(apiUrl);
+
+    if (response.status !== 200) {
+      return;
+    }
+
+    const productId = response.data.data.id;
+    setProductId(productId);
+  };
+
+  const fetchVariations = async () => {
     try {
-      const apiUrl = `http://localhost:3000/product/${productId}/variations`;
+      const apiUrl = `${BASE_API_URL}/product/${productId}/variations`;
       const response = await axios.get(apiUrl);
       const _variations = parseVariations(response.data.data);
       const _attributeChoices = getAttributeChoices(_variations);
@@ -116,6 +122,28 @@ function App() {
       console.error(error);
     }
   };
+
+  // get remote id and product id from url
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const remoteId = urlParams.get("remoteId");
+
+    if (remoteId) {
+      setRemoteId(remoteId);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (remoteId) {
+      fetchProductId();
+    }
+  }, [remoteId]);
+
+  useEffect(() => {
+    if (productId) {
+      fetchVariations();
+    }
+  }, [productId]);
 
   const handleClick = (
     attribute: string,
@@ -233,7 +261,7 @@ function App() {
   };
 
   const createCustomization = async (variationId: string) => {
-    const apiUrl = `http://localhost:3000/customization/generate/${variationId}`;
+    const apiUrl = `${BASE_API_URL}/customization/generate/${variationId}`;
     const response = await axios.get(apiUrl, {
       params: {
         redirect: false,
@@ -249,7 +277,7 @@ function App() {
 
     console.log(customizationId);
 
-    const updateUrl = `http://localhost:3000/customization/${customizationId}`;
+    const updateUrl = `${BASE_API_URL}/customization/${customizationId}`;
 
     const updateResp = await axios.patch(updateUrl, {
       sessionId: customizationId,
@@ -262,7 +290,7 @@ function App() {
       return;
     }
 
-    const completeUrl = `http://localhost:3000/customization/${customizationId}/complete`;
+    const completeUrl = `${BASE_API_URL}/customization/${customizationId}/complete`;
 
     const completeResp = await axios.post(completeUrl, {
       sessionId: customizationId,
@@ -300,52 +328,33 @@ function App() {
         style={{
           display: "flex",
           gap: "10px",
+          flexDirection: "column",
         }}
       >
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
             gap: "10px",
+            alignItems: "center",
           }}
         >
-          <label htmlFor="remoteIdInput">Enter a remote Id: </label>
-          <input
-            ref={remoteIDInputRef}
-            id="remoteIdInput"
-            name="remoteIdInput"
-            type="string"
-            defaultValue={"2387"}
-          />
+          <p>Product Id: </p>
+          <h5>{productId}</h5>
         </div>
+
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
             gap: "10px",
+            alignItems: "center",
           }}
         >
-          <label htmlFor="productIdInput">Enter a product Id: </label>
-          <input
-            ref={productIdInputRef}
-            id="productIdInput"
-            name="productIdInput"
-            type="string"
-            defaultValue={"f9cb4556-e358-4281-b6ae-3a1c322cbc4f"}
-          />
+          <p>Remote Id: </p>
+          <h2>{remoteId}</h2>
         </div>
       </div>
-      <button
-        className="submit"
-        onClick={() => {
-          const productId = productIdInputRef.current?.value || "";
-          fetchVariations(productId);
-        }}
-      >
-        Submit
-      </button>
 
       {noVariations && <p>No variations found for this product.</p>}
 
@@ -404,7 +413,6 @@ function App() {
           <button
             className="submit"
             onClick={() => {
-              const remoteId = remoteIDInputRef.current?.value || "";
               createCustomization(remoteId);
             }}
           >
@@ -421,12 +429,6 @@ function App() {
             </button>
           )}
         </div>
-      )}
-
-      {chosenAttributes[0] && (
-        <button className="stop" onClick={resetToInitialState}>
-          Clear Chosen Attributes
-        </button>
       )}
     </div>
   );
