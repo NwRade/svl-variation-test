@@ -5,6 +5,7 @@ import axios from "axios";
 import "./App.css";
 
 interface IAttribute {
+  id: string;
   type: string;
   value: string;
 }
@@ -15,12 +16,14 @@ interface IVariation {
 }
 
 interface IAttributeChoices {
+  id: string;
   type: string;
   allValues: string[];
   availableValues: string[];
 }
 
 interface IAttributeChoicesResponseEntity {
+  id: string;
   name: string;
   option: string;
 }
@@ -58,6 +61,7 @@ function App() {
         id: variation.id,
         attributes: variation.attributes.map((attribute: any) => {
           const parsedAttribute: IAttribute = {
+            id: attribute.id,
             type: attribute.name,
             value: attribute.option,
           };
@@ -80,6 +84,7 @@ function App() {
           }
         } else {
           attributeChoices.push({
+            id: attribute.id,
             type: attribute.type,
             allValues: [attribute.value],
             availableValues: [],
@@ -201,12 +206,14 @@ function App() {
 
         if (att) {
           return {
+            id: att.id,
             name: att.type,
             option: attribute,
           };
         }
 
         return {
+          id: "",
           name: "",
           option: "",
         };
@@ -286,43 +293,59 @@ function App() {
         alignItems: "center",
         justifyContent: "center",
         gap: "25px",
+        overflowY: "auto",
       }}
     >
       <div
         style={{
           display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
           gap: "10px",
         }}
       >
-        <label htmlFor="remoteIdInput">Enter a remote Id: </label>
-        <input
-          ref={remoteIDInputRef}
-          id="remoteIdInput"
-          name="remoteIdInput"
-          type="string"
-          defaultValue={"1312"}
-        />
-        <br />
-        <label htmlFor="productIdInput">Enter a product Id: </label>
-        <input
-          ref={productIdInputRef}
-          id="productIdInput"
-          name="productIdInput"
-          type="string"
-          defaultValue={"7fa95dd9-26b8-4aac-8c8f-17920c9d953d"}
-        />
-        <button
-          className="submit"
-          onClick={() => {
-            const productId = productIdInputRef.current?.value || "";
-            fetchVariations(productId);
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "10px",
           }}
         >
-          Submit
-        </button>
+          <label htmlFor="remoteIdInput">Enter a remote Id: </label>
+          <input
+            ref={remoteIDInputRef}
+            id="remoteIdInput"
+            name="remoteIdInput"
+            type="string"
+            defaultValue={"2387"}
+          />
+        </div>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "10px",
+          }}
+        >
+          <label htmlFor="productIdInput">Enter a product Id: </label>
+          <input
+            ref={productIdInputRef}
+            id="productIdInput"
+            name="productIdInput"
+            type="string"
+            defaultValue={"f9cb4556-e358-4281-b6ae-3a1c322cbc4f"}
+          />
+        </div>
       </div>
+      <button
+        className="submit"
+        onClick={() => {
+          const productId = productIdInputRef.current?.value || "";
+          fetchVariations(productId);
+        }}
+      >
+        Submit
+      </button>
 
       {noVariations && <p>No variations found for this product.</p>}
 
@@ -401,14 +424,9 @@ function App() {
       )}
 
       {chosenAttributes[0] && (
-        <>
-          <br />
-          <br />
-          <br />
-          <button className="stop" onClick={resetToInitialState}>
-            Clear Chosen Attributes
-          </button>
-        </>
+        <button className="stop" onClick={resetToInitialState}>
+          Clear Chosen Attributes
+        </button>
       )}
     </div>
   );
