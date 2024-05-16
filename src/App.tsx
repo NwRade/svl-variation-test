@@ -28,6 +28,7 @@ interface IAttributeChoicesResponseEntity {
   option: string;
 }
 
+// TOD0: change to http when running on local
 const BASE_API_URL = "https://91.108.111.210:3000";
 
 function App() {
