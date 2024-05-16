@@ -28,7 +28,7 @@ interface IAttributeChoicesResponseEntity {
   option: string;
 }
 
-const BASE_API_URL = "http://91.108.111.210:3000";
+const BASE_API_URL = "https://91.108.111.210:3000";
 
 function App() {
   const [productId, setProductId] = useState<string>("");
