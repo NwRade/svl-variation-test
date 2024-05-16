@@ -29,7 +29,7 @@ interface IAttributeChoicesResponseEntity {
 }
 
 // TOD0: change to http when running on local
-const BASE_API_URL = "https://91.108.111.210:3000";
+const BASE_API_URL = "https://personalise.storyverseland.com";
 
 function App() {
   const [productId, setProductId] = useState<string>("");
