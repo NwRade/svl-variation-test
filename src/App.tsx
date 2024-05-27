@@ -131,11 +131,7 @@ function App() {
 
   const getSlugImageLink = (slug: string, type: string) => {
     const formattedType = type.replace(/ /g, "-").toLowerCase();
-
-    console.log(formattedType);
-
     const slugImageLink = `https://avikstoryverseland.s3.amazonaws.com/attributes/${slug}/${formattedType}.png`;
-
     return slugImageLink;
   };
 
