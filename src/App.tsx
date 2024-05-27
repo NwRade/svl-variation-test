@@ -8,6 +8,7 @@ interface IAttribute {
   id: string;
   type: string;
   value: string;
+  slug: string;
 }
 
 interface IVariation {
@@ -18,6 +19,7 @@ interface IVariation {
 interface IAttributeChoices {
   id: string;
   type: string;
+  slug: string;
   allValues: string[];
   availableValues: string[];
 }
@@ -55,10 +57,12 @@ function App() {
       return {
         id: variation.id,
         attributes: variation.attributes.map((attribute: any) => {
+          console.log(attribute);
           const parsedAttribute: IAttribute = {
             id: attribute.id,
             type: attribute.name,
             value: attribute.option,
+            slug: attribute.slug,
           };
           return parsedAttribute;
         }),
@@ -81,6 +85,7 @@ function App() {
           attributeChoices.push({
             id: attribute.id,
             type: attribute.type,
+            slug: attribute.slug,
             allValues: [attribute.value],
             availableValues: [],
           });
@@ -122,6 +127,16 @@ function App() {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const getSlugImageLink = (slug: string, type: string) => {
+    const formattedType = type.replace(/ /g, "-").toLowerCase();
+
+    console.log(formattedType);
+
+    const slugImageLink = `https://avikstoryverseland.s3.amazonaws.com/attributes/${slug}/${formattedType}.png`;
+
+    return slugImageLink;
   };
 
   // get remote id and product id from url
@@ -372,27 +387,46 @@ function App() {
             >
               {(attributeIndex === 0 || chosenAttributes[attributeIndex - 1]) &&
                 attribute.allValues.map((attributeValue, i) => (
-                  <button
-                    key={i}
-                    onClick={() =>
-                      handleClick(
-                        attributeValue,
-                        attributeIndex,
-                        attribute.type
-                      )
-                    }
-                    disabled={
-                      attributeIndex !== 0 &&
-                      !attribute.availableValues.includes(attributeValue)
-                    }
-                    className={`${
-                      chosenAttributes.includes(attributeValue)
-                        ? "selected"
-                        : ""
-                    }`}
-                  >
-                    {attributeValue}
-                  </button>
+                  <>
+                    <button
+                      style={{
+                        width: "100px",
+                        height: "100px",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        padding: "1rem",
+                        gap: "5px",
+                      }}
+                      key={i}
+                      onClick={() =>
+                        handleClick(
+                          attributeValue,
+                          attributeIndex,
+                          attribute.type
+                        )
+                      }
+                      disabled={
+                        attributeIndex !== 0 &&
+                        !attribute.availableValues.includes(attributeValue)
+                      }
+                      className={`${
+                        chosenAttributes.includes(attributeValue)
+                          ? "selected"
+                          : ""
+                      }`}
+                    >
+                      <img
+                        style={{
+                          width: "50px",
+                          height: "50px",
+                        }}
+                        src={getSlugImageLink(attribute.slug, attributeValue)}
+                        alt={attributeValue}
+                      />
+                      {attributeValue}
+                    </button>
+                  </>
                 ))}
             </div>
           ))}
