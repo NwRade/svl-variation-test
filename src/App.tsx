@@ -9,10 +9,16 @@ interface IAttribute {
   type: string;
   value: string;
   slug: string;
+  prices: Array<{
+    currency: string;
+    regularPrice: string;
+    salePrice: string;
+  }>;
 }
 
 interface IVariation {
   id: string;
+  currency: string;
   attributes: IAttribute[];
 }
 
@@ -20,6 +26,8 @@ interface IAttributeChoices {
   id: string;
   type: string;
   slug: string;
+  currency: string;
+  prices: IAttribute["prices"];
   allValues: string[];
   availableValues: string[];
 }
@@ -31,7 +39,7 @@ interface IAttributeChoicesResponseEntity {
 }
 
 // TOD0: change to http when running on local
-const BASE_API_URL = "https://personalise.storyverseland.com/api";
+const BASE_API_URL = "http://localhost:3000/api";
 
 function App() {
   const [productId, setProductId] = useState<string>("");
@@ -56,6 +64,7 @@ function App() {
     return variations.map((variation: IVariation) => {
       return {
         id: variation.id,
+        currency: variation.currency,
         attributes: variation.attributes.map((attribute: any) => {
           console.log(attribute);
           const parsedAttribute: IAttribute = {
@@ -63,6 +72,7 @@ function App() {
             type: attribute.name,
             value: attribute.option,
             slug: attribute.slug,
+            prices: attribute.prices,
           };
           return parsedAttribute;
         }),
@@ -86,6 +96,8 @@ function App() {
             id: attribute.id,
             type: attribute.type,
             slug: attribute.slug,
+            prices: attribute.prices,
+            currency: variation.currency,
             allValues: [attribute.value],
             availableValues: [],
           });
@@ -378,6 +390,7 @@ function App() {
                 display: "flex",
                 flexDirection: "row",
                 gap: "10px",
+                height: "fit-content",
               }}
               key={attributeIndex}
             >
@@ -420,7 +433,15 @@ function App() {
                         src={getSlugImageLink(attribute.slug, attributeValue)}
                         alt={attributeValue}
                       />
-                      {attributeValue}
+                      <p>{attributeValue}</p>
+                      <p>
+                        {attribute.currency}{" "}
+                        {
+                          attribute.prices.find(
+                            (e) => e.currency === attribute.currency
+                          )?.regularPrice
+                        }
+                      </p>
                     </button>
                   </>
                 ))}
