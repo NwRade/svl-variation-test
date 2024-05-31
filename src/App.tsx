@@ -27,7 +27,7 @@ interface IAttributeChoices {
   type: string;
   slug: string;
   currency: string;
-  prices: IAttribute["prices"];
+  prices: Record<string, IAttribute["prices"]>;
   allValues: string[];
   availableValues: string[];
 }
@@ -39,7 +39,7 @@ interface IAttributeChoicesResponseEntity {
 }
 
 // TOD0: change to http when running on local
-const BASE_API_URL = "http://localhost:3000/api";
+const BASE_API_URL = "https://personalise.storyverseland.com/api";
 
 function App() {
   const [productId, setProductId] = useState<string>("");
@@ -66,7 +66,6 @@ function App() {
         id: variation.id,
         currency: variation.currency,
         attributes: variation.attributes.map((attribute: any) => {
-          console.log(attribute);
           const parsedAttribute: IAttribute = {
             id: attribute.id,
             type: attribute.name,
@@ -90,13 +89,16 @@ function App() {
         if (existingAttribute) {
           if (!existingAttribute.allValues.includes(attribute.value)) {
             existingAttribute.allValues.push(attribute.value);
+            existingAttribute.prices[attribute.value] = attribute.prices;
           }
         } else {
           attributeChoices.push({
             id: attribute.id,
             type: attribute.type,
             slug: attribute.slug,
-            prices: attribute.prices,
+            prices: {
+              [attribute.value]: attribute.prices,
+            },
             currency: variation.currency,
             allValues: [attribute.value],
             availableValues: [],
@@ -299,8 +301,6 @@ function App() {
     const customizationurl = response.data.url as string;
     const customizationId = customizationurl.split("/").pop();
 
-    console.log(customizationId);
-
     const updateUrl = `${BASE_API_URL}/customization/${customizationId}`;
 
     const updateResp = await axios.patch(updateUrl, {
@@ -395,17 +395,26 @@ function App() {
               key={attributeIndex}
             >
               {(attributeIndex === 0 || chosenAttributes[attributeIndex - 1]) &&
-                attribute.allValues.map((attributeValue, i) => (
-                  <>
+                attribute.allValues.map((attributeValue, i) => {
+                  const attributePriceEntry = attribute.prices[attributeValue];
+                  const attributePrice = attributePriceEntry.find(
+                    (e) => e.currency === attribute.currency
+                  )?.regularPrice;
+                  const attributePriceString = attributePrice
+                    ? `${attributePrice} ${attribute.currency}`
+                    : "Not available";
+
+                  return (
                     <button
                       style={{
-                        width: "100px",
-                        height: "100px",
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "center",
+                        justifyContent: "center",
                         padding: "1rem",
                         gap: "5px",
+                        height: "fit-content",
+                        width: "fit-content",
                       }}
                       key={i}
                       onClick={() =>
@@ -416,8 +425,11 @@ function App() {
                         )
                       }
                       disabled={
-                        attributeIndex !== 0 &&
-                        !attribute.availableValues.includes(attributeValue)
+                        (attributeIndex !== 0 &&
+                          !attribute.availableValues.includes(
+                            attributeValue
+                          )) ||
+                        attributePriceString === "Not available"
                       }
                       className={`${
                         chosenAttributes.includes(attributeValue)
@@ -434,17 +446,10 @@ function App() {
                         alt={attributeValue}
                       />
                       <p>{attributeValue}</p>
-                      <p>
-                        {attribute.currency}{" "}
-                        {
-                          attribute.prices.find(
-                            (e) => e.currency === attribute.currency
-                          )?.regularPrice
-                        }
-                      </p>
+                      <p>{attributePriceString}</p>
                     </button>
-                  </>
-                ))}
+                  );
+                })}
             </div>
           ))}
         </>
